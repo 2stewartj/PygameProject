@@ -29,14 +29,10 @@ boss = Actor("boss")
 boss.pos = (WIDTH // 2, 50)
 boss.xspeed = 0
 
-playerProjectile = Actor("playerprojectile")
-
-playerProjectile.speed = 0
 
 
-bossProjectile = Actor("bossprojectile")
-
-bossProjectile.speed = 0
+playerSpeed = 0
+bossSpeed = 0
 
 
 playerProj = []
@@ -56,7 +52,7 @@ bossCount = 0
 game_state = "title"
 
 playerShoot = False
-bossShoot = False
+bossShoot = True
 bossAbove = True
 
 Projectiles = pygame.sprite.Group()
@@ -67,6 +63,8 @@ def on_mouse_down(pos):
     global difficulty
     global game_state
     global bossHealth
+    global playerSpeed
+    global bossSpeed
 
     if easyButton.collidepoint(pos):
         difficulty = "Easy"
@@ -76,6 +74,8 @@ def on_mouse_down(pos):
         game_state = "playing"
         bossHealth = 50
         maxHP = 100
+        playerSpeed = 10
+        bossSpeed = 3
 
     elif mediumButton.collidepoint(pos):
         difficulty = "Medium"
@@ -85,6 +85,8 @@ def on_mouse_down(pos):
         game_state = "playing"
         bossHealth = 100
         maxHP = 100
+        playerSpeed = 8
+        bossSpeed = 5
 
     elif hardButton.collidepoint(pos):
         difficulty = "Hard"
@@ -94,15 +96,19 @@ def on_mouse_down(pos):
         game_state = "playing"
         bossHealth = 200
         maxHP = 200
+        playerSpeed = 6
+        bossSpeed = 8
 
 
 def PlayerShoot():
+    global playerShoot
     playerShoot = True
 
 def PlayerAttack():
     pass
 
 def BossShoot():
+    global bossShoot
     bossShoot = True
 
 def BossAbove():
@@ -112,14 +118,22 @@ def BossAbove():
         bossAbove = True
 
 
+
+
+
 def EnemyAttackOne():
-    global bossProj
-    global bossShoot
-    if bossShoot == True:
+    global bossSpeed
+    if bossShoot:
+        bossProj.append(Actor('bossprojectile'))
+        bossProj[-1].pos = boss.pos
         bossShoot = False
-        bossProj.append(bossProjectile)
-        print(bossProj)
-        clock.schedule(BossShoot, 1)
+
+        clock.schedule(BossShoot, .75)
+
+    for proj in playerProj:
+            proj.y += bossSpeed
+            if proj.y >= HEIGHT:
+                bossProj.remove(proj)
 
 
 def BackToMenu():
@@ -147,12 +161,7 @@ def update(dt):
         player.y += player.yspeed
 
 
-        if difficulty == "Easy":
-            playerProjectile.speed = 10
-        elif difficulty == "Medium":
-            playerProjectile.speed = 8
-        elif difficulty == "Hard":
-            playerProjectile.speed = 6
+
 
         if playerShoot == False:
             pygame.time.wait(250)
@@ -199,44 +208,55 @@ def update(dt):
                 player.yspeed = 0
 
         if keyboard.space:
-            print(projCount)
-            print(playerShoot)
+
             if playerShoot:
-                playerProj.append(playerProjectile)
-                print(playerProj)
+                playerProj.append(Actor('playerprojectile'))
+                playerProj[-1].pos = player.pos
                 playerShoot = False
-                print(playerShoot)
-                clock.schedule(PlayerShoot, 500)
+
+                clock.schedule(PlayerShoot, 2.0)
 
             else:
                 print("can't shoot yet")
 
-        if playerProj != 0:
+        for proj in playerProj:
+            proj.y -= 10
+            if proj.y <= 0:
+                playerProj.remove(proj)
 
-            for proj in playerProj:
-                if playerProjectile.y <= 0:
-                    if projCount == 0:
-                        pass
-                    else:
-                        for n in playerProjectile.y <= 0:
-                            playerProjectile.x = 5000
-
-                if playerProjectile.colliderect(boss):
-                    bossHealth -= 1
-                    if projCount == 0:
-                        pass
-                    else:
-                        for n in playerProjectile.colliderect(boss):
-                            playerProjectile.x = 5000
-
-                playerProjectile.pos = player.pos
-                playerProjectile.y -= playerProjectile.speed
-
+        for proj in playerProj:
+            if proj.colliderect(boss):
+                bossHealth -= 1
+                playerProj.remove(proj)
 
         for proj in bossProj:
-            bossProjectile.pos = boss.pos
-            print(bossProjectile.speed)
-            bossProjectile.y -= bossProjectile.speed
+            if player.colliderect(proj):
+                death += 1
+                player.pos = (WIDTH // 2, 450)
+                boss.pos = (WIDTH // 2, 50)
+                if difficulty == "Easy":
+                    bossHealth = 50
+                if difficulty == "Medium":
+                    bossHealth = 100
+                if difficulty == "Hard":
+                    bossHealth = 200
+                playerProj = []
+                bossProj = []
+
+        for proj in bossProj:
+            if player.colliderect(proj):
+                death += 1
+                player.pos = (WIDTH // 2, 450)
+                boss.pos = (WIDTH // 2, 50)
+                if difficulty == "Easy":
+                    bossHealth = 50
+                if difficulty == "Medium":
+                    bossHealth = 100
+                if difficulty == "Hard":
+                    bossHealth = 200
+                playerProj = []
+                bossProj = []
+
 
 
 
@@ -251,46 +271,31 @@ def update(dt):
                 bossHealth = 50
             if difficulty == "Medium":
                 bossHealth = 100
-            playerProj = []
-            bossProj = []
-            playerProjectile.pos = player.pos
-        if player.colliderect(bossProjectile):
-            death += 1
-            player.pos = (WIDTH // 2, 450)
-            boss.pos = (WIDTH // 2, 50)
-            if difficulty == "Easy":
-                bossHealth = 50
-            if difficulty == "Medium":
-                bossHealth = 100
             if difficulty == "Hard":
-                bossHealth = 200
+                bossHealth == 200
             playerProj = []
             bossProj = []
-            playerProjectile.pos = player.pos
-        if bossAbove:
-            boss.x += boss.xspeed
-            boss.xspeed = player.xspeed
-            bossProjectile.y += bossProjectile.speed
-        else:
-            boss.y += boss.xspeed
-            boss.yspeed = player.xspeed
-            bossProjectile.x += bossProjectile.speed
+
+
+
+
 
         if difficulty == "Easy":
-            bossProjectile.speed = 3
+
             if 0 < bossHealth <= 50:
 
                 phase = 1
 
             if phase == 1:
+                boss.x = player.x
                 if bossShoot:
 
-                    clock.schedule(EnemyAttackOne, 750)
+                    EnemyAttackOne
                 else:
                     clock.schedule(BossShoot, 750)
 
         if difficulty == "Medium":
-            bossProjectile.speed = 5
+
             if 70 <= bossHealth <= 100:
                 phase = 1
             elif 25 <= bossHealth <= 70:
@@ -298,8 +303,11 @@ def update(dt):
             elif 0 < bossHealth <= 25:
                 phase = 3
 
+            if phase == 1:
+                boss.x = player.x
+
         if difficulty == "Hard":
-            bossProjectile.speed = 8
+
             if 175 <= bossHealth <= 200:
                 phase = 1
             elif 130 <= bossHealth <= 175:
@@ -312,6 +320,9 @@ def update(dt):
                 phase = 5
             elif 0 < bossHealth <= 20:
                 phase = 6
+
+            if phase == 1:
+                boss.x = player.x
 
 
             if phase == 1:
@@ -348,11 +359,11 @@ def draw():
         screen.draw.text("Attempts: " + str(death), (10, 30))
         screen.draw.text("BossHP: " + str(bossHealth), (350, 10))
 
-        for n in playerProj:
-            playerProjectile.draw()
+        for proj in playerProj:
+            proj.draw()
 
         for n in bossProj:
-            bossProjectile.draw()
+            n.draw()
 
     elif game_state == "results":
         screen.clear()
