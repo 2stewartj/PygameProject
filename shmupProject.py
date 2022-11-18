@@ -54,6 +54,7 @@ game_state = "title"
 playerShoot = True
 bossShoot = True
 bossAbove = True
+bossWait = False
 
 Projectiles = pygame.sprite.Group()
 
@@ -67,37 +68,34 @@ def on_mouse_down(pos):
     global bossSpeed
 
     if easyButton.collidepoint(pos):
-        difficulty = "Easy"
-        easyButton.x = 5000
-        mediumButton.x = 5000
-        hardButton.x = 5000
-        game_state = "playing"
-        bossHealth = 50
-        maxHP = 100
-        playerSpeed = 10
-        bossSpeed = 3
+        if game_state == 'title':
+            difficulty = "Easy"
+            game_state = "playing"
+            bossHealth = 50
+            maxHP = 100
+            playerSpeed = 10
+            bossSpeed = 3
+            #music.play('battle1')
 
     elif mediumButton.collidepoint(pos):
-        difficulty = "Medium"
-        easyButton.x = 5000
-        mediumButton.x = 5000
-        hardButton.x = 5000
-        game_state = "playing"
-        bossHealth = 100
-        maxHP = 100
-        playerSpeed = 8
-        bossSpeed = 5
+        if game_state == 'title':
+            difficulty = "Medium"
+            game_state = "playing"
+            bossHealth = 100
+            maxHP = 100
+            playerSpeed = 8
+            bossSpeed = 5
+            #music.play('battle1')
 
     elif hardButton.collidepoint(pos):
-        difficulty = "Hard"
-        easyButton.x = 5000
-        mediumButton.x = 5000
-        hardButton.x = 5000
-        game_state = "playing"
-        bossHealth = 200
-        maxHP = 200
-        playerSpeed = 6
-        bossSpeed = 8
+        if game_state == 'title':
+            difficulty = "Hard"
+            game_state = "playing"
+            bossHealth = 200
+            maxHP = 200
+            playerSpeed = 6
+            bossSpeed = 8
+            #music.play('battle2')
 
 
 def PlayerShoot():
@@ -121,7 +119,7 @@ def BossAbove():
 
 
 
-def BossAttackOne():
+def BossAttackOne(x):
     global bossSpeed
     global bossShoot
     if bossShoot:
@@ -129,14 +127,14 @@ def BossAttackOne():
         bossProj[-1].pos = boss.pos
         bossShoot = False
 
-        clock.schedule(BossShoot, .75)
+        clock.schedule(BossShoot, x)
 
     for proj in bossProj:
             proj.y += bossSpeed
             if proj.y >= HEIGHT:
                 bossProj.remove(proj)
 
-def BossAttackTwo():
+def BossAttackTwo(x):
     global bossSpeed
     global bossShoot
     global bossProjHoriz
@@ -144,23 +142,89 @@ def BossAttackTwo():
     if bossShoot:
         bossProj.append(Actor('bossprojectile'))
         bossProj[-1].pos = boss.pos
+        bossProj[-1].xspeed = random.randint(-5, 5)
         bossShoot = False
 
-        clock.schedule(BossShoot, .75)
+        clock.schedule(BossShoot, x)
 
     for proj in bossProj:
-            proj.y += bossSpeed
 
-            proj.x += bossProjHoriz
-            if proj.x >= WIDTH:
-                bossProjHoriz = -5
-            elif proj.x <= 0:
-                bossProjHoriz = 5
-            if proj.y >= HEIGHT:
-                bossProj.remove(proj)
+            if proj:
+                proj.y += bossSpeed
+
+                proj.x += proj.xspeed
+                if proj.x >= WIDTH:
+                    proj.xspeed *= -1
+                elif proj.x <= 0:
+                    proj.xspeed *= -1
+                if proj.y >= HEIGHT:
+                    bossProj.remove(proj)
+
+
+
+def BossAttackThree(x):
+    global bossSpeed
+    global bossShoot
+    global bossSpeed
+    global bossShoot
+    if bossShoot:
+        bossProj.append(Actor('bossprojectile'))
+        bossProj[-1].pos = boss.pos
+        bossShoot = False
+
+        clock.schedule(BossShoot, x)
+
+
+    for proj in bossProj:
+        if proj.x < player.x:
+            proj.x += 1
+        elif proj.x > player.x:
+            proj.x -= 1
+
+        if proj.y < player.y:
+            proj.y += 1
+        elif proj.y > player.y:
+            proj.y -= 1
+
+def BossAttackFour(x):
+    global bossSpeed
+    global bossShoot
+    global bossProjHoriz
+    bossProjHoriz = 5
+    if bossShoot:
+        n = random.randint(4, 9)
+        for k in range(n):
+            bossProj.append(Actor('bossprojectile'))
+            bossProj[-1].pos = boss.pos
+
+            bossProj[-1].xspeed = random.randint(-5, 5)
+            bossShoot = False
+
+        clock.schedule(BossShoot, x)
+
+    for proj in bossProj:
+
+            if proj:
+                if bossSpeed - abs(proj.xspeed) <= 0:
+                    proj.y += 1
+
+                else:
+                    proj.y += bossSpeed - abs(proj.xspeed)
+
+                proj.x += proj.xspeed
+                if proj.x >= WIDTH:
+                    proj.xspeed *= -1
+                elif proj.x <= 0:
+                    proj.xspeed *= -1
+                if proj.y >= HEIGHT:
+                    bossProj.remove(proj)
+
+
+
 
 
 def BackToMenu():
+    global game_state
     game_state = 'title'
 
 
@@ -176,6 +240,8 @@ def update(dt):
     global game_state
     global playerShoot
     global bossShoot
+    global bossWait
+    global bossSpeed
 
     projCount = playerProj.count("shoot")
     bossCount = bossProj.count("shoot")
@@ -292,6 +358,7 @@ def update(dt):
 
         if player.colliderect(boss):
             death += 1
+            BossShoot()
             player.pos = (WIDTH // 2, 450)
             boss.pos = (WIDTH // 2, 50)
             if difficulty == "Easy":
@@ -315,7 +382,7 @@ def update(dt):
 
             if phase == 1:
                 boss.x = player.x
-                clock.schedule(BossAttackOne, .75)
+                BossAttackOne(.75)
 
 
 
@@ -323,57 +390,130 @@ def update(dt):
 
             if 70 <= bossHealth <= 100:
                 phase = 1
-            elif 25 <= bossHealth <= 70:
+            elif 40 <= bossHealth <= 70:
                 phase = 2
-            elif 0 < bossHealth <= 25:
+            elif 0 < bossHealth <= 40:
                 phase = 3
+
+            if bossHealth == 70 or bossHealth == 40:
+                bossWait = False
 
             if bossHealth == 100:
                 bossProjHoriz = 0
 
             if phase == 1:
                 boss.x = player.x
-                clock.schedule(BossAttackOne, .50)
+                BossAttackOne(.50)
             if phase == 2:
-                    boss.x = (WIDTH // 2)
-                    clock.schedule(BossAttackTwo, .75)
-            if Phase == 3:
-                boss.x = player.x
+                    boss.x = player.x
+                    if bossWait:
+                        BossAttackTwo(.75)
+                    else:
+                        if bossProj == []:
+                            bossWait = True
+                        else:
+                            bossWait = False
+                            for proj in bossProj:
+                                proj.y += bossSpeed
+                                if proj.y >= HEIGHT:
+                                    bossProj.remove(proj)
+            if phase == 3:
+                if boss.x < (WIDTH // 2):
+                    boss.x += 1
+                elif boss.x > (WIDTH // 2):
+                    boss.x -= 1
+
+                if bossWait:
+                    BossAttackFour(2.0)
+                else:
+                    if bossProj == []:
+                        bossWait = True
+                    else:
+                        bossWait = False
+                        for proj in bossProj:
+                            proj.y += bossSpeed
+                            proj.x += proj.xspeed
+                            if proj.x >= WIDTH:
+                                proj.xspeed *= -1
+                            elif proj.x <= 0:
+                                proj.xspeed *= -1
+                            if proj.y >= HEIGHT:
+                                bossProj.remove(proj)
 
 
         if difficulty == "Hard":
 
-            if 175 <= bossHealth <= 200:
+            if 190 <= bossHealth <= 200:
                 phase = 1
-            elif 140 <= bossHealth <= 175:
+            elif 160 <= bossHealth <= 190:
                 phase = 2
-            elif 100 <= bossHealth <= 140:
+            elif 110 <= bossHealth <= 160:
                 phase = 3
-            elif 60 <= bossHealth <= 100:
+            elif 100 <= bossHealth <= 110:
                 phase = 4
-            elif 20 <= bossHealth <= 60:
+            elif 50 <= bossHealth <= 100:
                 phase = 5
-            elif 0 < bossHealth <= 20:
+            elif 20 < bossHealth <= 50:
                 phase = 6
+            elif 0 < bossHealth <= 20:
+                phase = 7
+
+            if bossHealth == 190 or bossHealth == 160 or bossHealth == 190:
+                bossWait = False
 
             if bossHealth == 200:
                 bossProjHoriz = 0
 
             if phase == 1:
                 boss.x = player.x
-                clock.schedule(BossAttackOne, .35)
+                BossAttackOne(.25)
 
             if phase == 2:
-                    boss.x = (WIDTH // 2)
-                    clock.schedule(BossAttackTwo, .75)
+                if boss.x < (WIDTH // 2):
+                    boss.x += 1
+                elif boss.x > (WIDTH // 2):
+                    boss.x -= 1
+
+
+                if bossWait:
+                    BossAttackFour(.90)
+                else:
+                    if bossProj == []:
+                        bossWait = True
+                    else:
+                        bossWait = False
+                        for proj in bossProj:
+                            proj.y += bossSpeed
+                            if proj.y >= HEIGHT:
+                                bossProj.remove(proj)
+
+
+
+
+
+
+            if phase == 3:
+                boss.x = (WIDTH // 2)
+                if bossWait:
+                    BossAttackThree(3.0)
+                else:
+                    if bossProj == []:
+                        bossWait = True
+                    else:
+
+                        for proj in bossProj:
+                            proj.y += bossSpeed
+                            if proj.y >= HEIGHT:
+                                bossProj.remove(proj)
 
 
         if bossHealth <= 0:
-
+            sounds.bossdeath.play(0)
             game_state = "results"
 
     if game_state == "results":
-        sounds.bossdeath.play(1)
+        music.fadeout(5.0)
+
 
         clock.schedule(BackToMenu, 10.0)
 
@@ -388,7 +528,7 @@ def draw():
         hardButton.draw()
 
     if game_state == "playing":
-
+        screen.clear()
         if difficulty == "Hard":
             screen.fill((72, 20, 50))
         else:
