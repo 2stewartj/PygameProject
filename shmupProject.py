@@ -58,7 +58,6 @@ game_state = "title"
 
 playerShoot = True
 bossShoot = True
-bossAbove = True
 bossWait = False
 bossCharge = False
 bossReturn = False
@@ -73,6 +72,7 @@ def on_mouse_down(pos):
     global bossHealth
     global playerSpeed
     global bossSpeed
+    global maxHP
 
     if easyButton.collidepoint(pos):
         if game_state == 'title':
@@ -82,7 +82,8 @@ def on_mouse_down(pos):
             maxHP = 100
             playerSpeed = 10
             bossSpeed = 3
-            #music.play('battle1')
+            music.play('battle1')
+            print(game_state)
 
     elif mediumButton.collidepoint(pos):
         if game_state == 'title':
@@ -90,9 +91,10 @@ def on_mouse_down(pos):
             game_state = "playing"
             bossHealth = 100
             maxHP = 100
-            playerSpeed = 8
+            playerSpeed = 9
             bossSpeed = 5
-            #music.play('battle1')
+            music.play('battle1')
+            print(game_state)
 
     elif hardButton.collidepoint(pos):
         if game_state == 'title':
@@ -100,12 +102,13 @@ def on_mouse_down(pos):
             game_state = "playing"
             bossHealth = 200
             maxHP = 200
-            playerSpeed = 6
+            playerSpeed = 8
             bossSpeed = 8
-            #music.play('battle2')
+            music.play('battle2')
+            print(game_state)
 
     elif tutorialButton.collidepoint(pos):
-        if game_state == "title":
+        if game_state == 'title':
             game_state = "tutorial"
 
 
@@ -125,15 +128,6 @@ def BossCharge():
     global bossCharge
     boss.y += 1
     bossCharge = True
-
-
-def BossAbove():
-    if bossAbove == True:
-        bossAbove = False
-    else:
-        bossAbove = True
-
-
 
 
 
@@ -157,6 +151,8 @@ def BossAttackTwo(x):
     global bossSpeed
     global bossShoot
     global bossProjHoriz
+    global bossWait
+
     bossProjHoriz = 5
     if bossShoot:
         bossProj.append(Actor('bossprojectile2'))
@@ -176,6 +172,12 @@ def BossAttackTwo(x):
                     proj.xspeed *= -1
                 elif proj.x <= 0:
                     proj.xspeed *= -1
+                if bossWait == False:
+                    proj.x += proj.xspeed
+                    if proj.x >= WIDTH:
+                        proj.xspeed *= -1
+                    elif proj.x <= 0:
+                        proj.xspeed *= -1
                 if proj.y >= HEIGHT:
                     bossProj.remove(proj)
 
@@ -186,6 +188,7 @@ def BossAttackThree(x):
     global bossShoot
     global bossSpeed
     global bossShoot
+    global bossWait
     if bossShoot:
         bossProj.append(Actor('bossprojectile'))
         bossProj[-1].pos = boss.pos
@@ -209,6 +212,7 @@ def BossAttackFour(x):
     global bossSpeed
     global bossShoot
     global bossProjHoriz
+    global bossWait
     bossProjHoriz = 5
     if bossShoot:
         n = random.randint(4, 9)
@@ -235,6 +239,12 @@ def BossAttackFour(x):
                     proj.xspeed *= -1
                 elif proj.x <= 0:
                     proj.xspeed *= -1
+                if bossWait == False:
+                    proj.x += proj.xspeed
+                    if proj.x >= WIDTH:
+                        proj.xspeed *= -1
+                    elif proj.x <= 0:
+                        proj.xspeed *= -1
                 if proj.y >= HEIGHT:
                     bossProj.remove(proj)
 
@@ -242,6 +252,7 @@ def BossAttackFive(x):
     global bossSpeed
     global bossShoot
     global bossProjHoriz
+    global bossWait
     bossProjHoriz = 5
     if bossShoot:
         n = random.randint(4, 9)
@@ -263,7 +274,9 @@ def BossAttackFive(x):
                 else:
                     proj.y += bossSpeed - abs(proj.xspeed)
                     proj.x += proj.xspeed
-
+                    if bossWait == False:
+                        proj.y += bossSpeed - abs(proj.xspeed)
+                        proj.x += proj.xspeed
 
 
                 if proj.y >= HEIGHT:
@@ -274,18 +287,23 @@ def BossAttackSix(x):
     global bossReturn
     global bossCharge
 
+    if player.colliderect(boss):
+        return
+
     if bossReturn == False:
         if boss.y < HEIGHT:
-            boss.y += 9
-        elif boss.y == HEIGHT:
+            boss.y += bossSpeed
+        elif boss.y >= HEIGHT:
+            boss.y += 0
             bossReturn = True
             print(bossReturn)
-    elif bossReturn == True:
-        if boss.y > 50:
-            boss.y -= 3
-        elif boss.y == 50:
+
+    elif bossReturn:
+        boss.y -= 5
+        if boss.y <= 50:
             bossReturn = False
             bossCharge = False
+
 
 def BossAttackDying(x):
     global bossSpeed
@@ -338,9 +356,6 @@ def update(dt):
         t += dt
         player.x += player.xspeed
         player.y += player.yspeed
-
-
-
 
 
 
@@ -474,6 +489,8 @@ def update(dt):
             if phase == 1:
                 boss.x = player.x
                 BossAttackOne(.50)
+
+
             if phase == 2:
                     boss.x = player.x
                     if bossWait:
@@ -487,6 +504,8 @@ def update(dt):
                                 proj.y += bossSpeed
                                 if proj.y >= HEIGHT:
                                     bossProj.remove(proj)
+
+
             if phase == 3:
                 if boss.x < (WIDTH // 2):
                     boss.x += 1
@@ -538,6 +557,7 @@ def update(dt):
                 boss.x = player.x
                 BossAttackOne(.25)
 
+
             if phase == 2:
                 if boss.x < (WIDTH // 2):
                     boss.x += 1
@@ -558,10 +578,6 @@ def update(dt):
                                 bossProj.remove(proj)
 
 
-
-
-
-
             if phase == 3:
                 boss.x = (WIDTH // 2)
                 if bossWait:
@@ -577,6 +593,7 @@ def update(dt):
                             if proj.y >= HEIGHT:
                                 bossProj.remove(proj)
 
+
             if phase == 4:
 
                 if bossWait:
@@ -590,6 +607,7 @@ def update(dt):
                         bossProj = []
                         sounds.bossdeath.play(0)
 
+
             if phase == 5:
                 if bossCharge == False:
                     clock.schedule(BossCharge, 1.5)
@@ -599,6 +617,8 @@ def update(dt):
                         boss.x -= 2
                 elif bossCharge == True:
                     BossAttackSix(5)
+
+
 
             if phase == 6:
                 if boss.x < player.x:
@@ -619,13 +639,13 @@ def update(dt):
                             if proj.y >= HEIGHT:
                                 bossProj.remove(proj)
 
+
             if phase == 7:
                 music.fadeout(5.0)
                 if boss.x < player.x:
                     boss.x += 1
                 elif boss.x > player.x:
                     boss.x -= 1
-
 
                 if bossWait:
                     BossAttackDying(2.0)
@@ -646,10 +666,14 @@ def update(dt):
             game_state = "results"
 
     if game_state == "results":
-        music.fadeout(5.0)
+        if difficulty != "Hard":
+            music.fadeout(5.0)
+        bossProj = []
+        playerProj = []
 
+        if keyboard.f:
 
-        clock.schedule(BackToMenu, 10.0)
+            game_state = 'title'
 
 
 def draw():
@@ -696,3 +720,5 @@ def draw():
         screen.draw.text('Difficulty: ' + difficulty, (200, 225))
         screen.draw.text("Time: " + "{:.2f}".format(t), (200, 250))
         screen.draw.text("Attempts: " + str(death), (200, 275))
+        screen.draw.text("Press 'F' to return to menu", (150, 300))
+
